@@ -39,7 +39,8 @@ int main(int argc, char **argv)
 
     // const char * gst = "nvcamerasrc ! video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, format=(string)I420, framerate=(fraction)24/1 ! nvvidconv flip-method=2 ! videoconvert ! appsink";
     const char * gst = "nvcamerasrc ! video/x-raw(memory:NVMM), width=(int)960, height=(int)540, format=(string)I420, framerate=(fraction)30/1 ! nvvidconv flip-method=2 ! videoconvert ! appsink";
-    cv::VideoCapture cap(gst);
+    //cv::VideoCapture cap(gst);
+    cv::VideoCapture cap(0);
     if (!cap.isOpened()) {
       printf("can not open camera or video file\n%s", gst);
       return -1;
