@@ -36,6 +36,8 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 
+#include "Thirdparty/Apriltag2/apriltag_src/common/getopt.h"
+
 namespace ORB_SLAM2
 {
 
@@ -156,6 +158,9 @@ private:
     std::mutex mMutexMode;
     bool mbActivateLocalizationMode;
     bool mbDeactivateLocalizationMode;
+
+    //apriltag config
+    getopt_t *aprilopt;
 };
 
 }// namespace ORB_SLAM

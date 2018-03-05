@@ -110,6 +110,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
+    
+    aprilopt=getopt_create();
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
@@ -270,7 +272,7 @@ void System::Shutdown()
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
     mpViewer->RequestFinish();
-
+    getopt_destroy(aprilopt);
     // Wait until all thread have effectively stopped
     while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished()  ||
           !mpViewer->isFinished()      || mpLoopCloser->isRunningGBA())
@@ -282,7 +284,7 @@ void System::Shutdown()
     mptViewer->join();
     mptLoopClosing->join();
     mptLocalMapping->join();
-
+    
     pangolin::BindToContext("ORB-SLAM2: Map Viewer");
 }
 
