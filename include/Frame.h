@@ -30,6 +30,14 @@
 #include "KeyFrame.h"
 #include "ORBextractor.h"
 
+#include "Thirdparty/Apriltag2/apriltag_src/apriltag.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag36h11.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag36h10.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag36artoolkit.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag25h9.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag25h7.h"
+#include "Thirdparty/Apriltag2/apriltag_src/common/getopt.h"
+
 #include <opencv2/opencv.hpp>
 
 namespace ORB_SLAM2
@@ -56,6 +64,9 @@ public:
 
     // Constructor for Monocular cameras.
     Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+
+    // Constructor for Monocular cameras with apriltag.
+    Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, getopt_t* apriltag_config);
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::Mat &im);
