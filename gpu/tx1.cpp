@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::MONOCULAR,true);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::MONOCULAR,NULL,NULL,true);
 
     cout << endl << "-------" << endl;
     cout << "Start processing sequence ..." << endl;
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
       PUSH_RANGE("Track image", 4);
       // Pass the image to the SLAM system
-      SLAM.TrackMonocular(im,tframe);
+      SLAM.TrackMonocular_april(im,tframe);
       POP_RANGE;
       SET_CLOCK(t2);
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
       tsum = tframe - tbuf[tpos];
       tbuf[tpos] = tframe;
       tpos = (tpos + 1) % 10;
-      cerr << "Frame " << frameNumber << " : " << tframe << " " << trackTime << " " << 10 / tsum << "\n";
+      //cerr << "Frame " << frameNumber << " : " << tframe << " " << trackTime << " " << 10 / tsum << "\n";
       ++frameNumber;
     }
     // Stop all threads

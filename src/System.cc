@@ -110,8 +110,121 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
+
+    cout<<"Default Apriltag configuration set"<<endl; 
+    aprilopt=NULL;
+    april_det_opt=NULL;
+}
+
+System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, 
+                apriltag_family_t * input_opt, apriltag_detector_t* input_det_opt, const bool bUseViewer)
+  : mSensor(sensor), mbReset(false), mbActivateLocalizationMode(false)
+  , mbDeactivateLocalizationMode(false)
+{
+    // Output welcome message
+    cout << endl <<
+    "ORB-SLAM2 Copyright (C) 2014-2016 Raul Mur-Artal, University of Zaragoza." << endl <<
+    "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
+    "This is free software, and you are welcome to redistribute it" << endl <<
+    "under certain conditions. See LICENSE.txt." << endl << endl;
+
+    cout << "Input sensor was set to: ";
+
+    if(mSensor==MONOCULAR)
+        cout << "Monocular" << endl;
+    else if(mSensor==STEREO)
+        cout << "Stereo" << endl;
+    else if(mSensor==RGBD)
+        cout << "RGB-D" << endl;
+
+    //Check settings file
+    cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
+    if(!fsSettings.isOpened())
+    {
+       cerr << "Failed to open settings file at: " << strSettingsFile << endl;
+       exit(-1);
+    }
+
+    //Load ORB Vocabulary
+    cout << endl << "Loading ORB Vocabulary. This could take a while..." << endl;
+
+    mpVocabulary = new ORBVocabulary();
+    bool bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+    if(!bVocLoad)
+    {
+        cerr << "Wrong path to vocabulary. " << endl;
+        cerr << "Falied to open at: " << strVocFile << endl;
+        exit(-1);
+    }
+    cout << "Vocabulary loaded!" << endl << endl;
+
+    //Create KeyFrame Database
+    mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+
+    //Create the Map
+    mpMap = new Map();
+
+    //Create Drawers. These are used by the Viewer
+    mpFrameDrawer = new FrameDrawer(mpMap);
+    mpMapDrawer = new MapDrawer(mpMap, strSettingsFile);
+
+    //Initialize the Tracking thread
+    //(it will live in the main thread of execution, the one that called this constructor)
+    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
+                             mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
+
+    //Initialize the Local Mapping thread and launch
+    mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
+    mptLocalMapping = new thread(&ORB_SLAM2::LocalMapping::Run,mpLocalMapper);
+
+    //Initialize the Loop Closing thread and launch
+    mpLoopCloser = new LoopClosing(mpMap, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR);
+    mptLoopClosing = new thread(&ORB_SLAM2::LoopClosing::Run, mpLoopCloser);
+
+    //Initialize the Viewer thread and launch
+    mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+    if(bUseViewer)
+        mptViewer = new thread(&Viewer::Run, mpViewer);
+
+    mpTracker->SetViewer(mpViewer);
+
+    //Set pointers between threads
+    mpTracker->SetLocalMapper(mpLocalMapper);
+    mpTracker->SetLoopClosing(mpLoopCloser);
+
+    mpLocalMapper->SetTracker(mpTracker);
+    mpLocalMapper->SetLoopCloser(mpLoopCloser);
+
+    mpLoopCloser->SetTracker(mpTracker);
+    mpLoopCloser->SetLocalMapper(mpLocalMapper);
+
     
-    aprilopt=getopt_create();
+    if(input_opt!=NULL)
+    {
+        cout<<"Customed Apriltag configuration set"<<endl;
+        aprilopt=input_opt;
+       
+    }else{
+        cout<<"Default Apriltag configuration set"<<endl; 
+        aprilopt=tag36h11_create();
+        
+    }
+    if(input_det_opt!=NULL)
+    {
+         april_det_opt=input_det_opt;
+         cout<<"Customed Apriltag configuration set"<<endl;
+    }else{
+        april_det_opt=apriltag_detector_create();
+        apriltag_detector_add_family(april_det_opt,aprilopt);
+        april_det_opt->quad_decimate=1.0;
+        april_det_opt->quad_sigma=0.0;
+        april_det_opt->nthreads=4;
+        april_det_opt->debug=0;
+        april_det_opt->refine_edges=0;
+        april_det_opt->refine_decode=0;
+        april_det_opt->refine_pose=0;
+        cout<<"Default Apriltag detector configuration set"<<endl;
+    }
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
@@ -249,6 +362,51 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp)
     return mpTracker->GrabImageMonocular(im,timestamp);
 }
 
+
+cv::Mat System::TrackMonocular_april(const cv::Mat &im, const double &timestamp)
+{
+    if(mSensor!=MONOCULAR)
+    {
+        cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular." << endl;
+        exit(-1);
+    }
+
+    // Check mode change
+    {
+        unique_lock<mutex> lock(mMutexMode);
+        if(mbActivateLocalizationMode)
+        {
+            mpLocalMapper->RequestStop();
+
+            // Wait until Local Mapping has effectively stopped
+            while(!mpLocalMapper->isStopped())
+            {
+                usleep(1000);
+            }
+
+            mpTracker->InformOnlyTracking(true);
+            mbActivateLocalizationMode = false;
+        }
+        if(mbDeactivateLocalizationMode)
+        {
+            mpTracker->InformOnlyTracking(false);
+            mpLocalMapper->Release();
+            mbDeactivateLocalizationMode = false;
+        }
+    }
+
+    // Check reset
+    {
+    unique_lock<mutex> lock(mMutexReset);
+    if(mbReset)
+    {
+        mpTracker->Reset();
+        mbReset = false;
+    }
+    }
+    return mpTracker->GrabImageMonocular_april(im,timestamp,april_det_opt);
+}
+
 void System::ActivateLocalizationMode()
 {
     unique_lock<mutex> lock(mMutexMode);
@@ -269,10 +427,16 @@ void System::Reset()
 
 void System::Shutdown()
 {
+    cout<<"\nStart to turn off the SLAM"<<endl;
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
     mpViewer->RequestFinish();
-    getopt_destroy(aprilopt);
+    if(aprilopt!=NULL)
+        tag36h11_destroy(aprilopt);
+    
+    if(april_det_opt!=NULL)
+        apriltag_detector_destroy(april_det_opt);
+    
     // Wait until all thread have effectively stopped
     while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished()  ||
           !mpViewer->isFinished()      || mpLoopCloser->isRunningGBA())

@@ -238,7 +238,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp,
 Frame::Frame(const cv::Mat &imGray, const double &timeStamp,
              ORBextractor* extractor,ORBVocabulary* voc,
              cv::Mat &K, cv::Mat &distCoef,
-             const float &bf, const float &thDepth, bool use_april_tag)
+             const float &bf, const float &thDepth, apriltag_detector_t * april_det_opt)
     :mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth)
 {
@@ -254,6 +254,15 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp,
     mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
+    // April tag detect
+    image_u8_t april_im = { .width = imGray.cols,
+        .height = imGray.rows,
+        .stride = imGray.cols,
+        .buf = imGray.data
+    };
+
+    detected_tag=apriltag_detector_detect(april_det_opt,&april_im);
+    cout << "Frame "<<mnId<<" "<<zarray_size(detected_tag) << " tags detected" << endl;
     // ORB extraction
     ExtractORB(0,imGray);
 

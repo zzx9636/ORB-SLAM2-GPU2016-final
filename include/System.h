@@ -36,6 +36,12 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 
+#include "Thirdparty/Apriltag2/apriltag_src/apriltag.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag36h11.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag36h10.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag36artoolkit.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag25h9.h"
+#include "Thirdparty/Apriltag2/apriltag_src/tag25h7.h"
 #include "Thirdparty/Apriltag2/apriltag_src/common/getopt.h"
 
 namespace ORB_SLAM2
@@ -63,6 +69,9 @@ public:
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true);
 
+    // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads with apriltag config input.
+    System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, apriltag_family_t * input_opt, apriltag_detector_t* input_det_opt, const bool bUseViewer = true);
+
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
@@ -78,6 +87,11 @@ public:
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp);
+
+    // Proccess the given monocular frame with april tag
+    // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
+    // Returns the camera pose (empty if tracking fails).
+    cv::Mat TrackMonocular_april(const cv::Mat &im, const double &timestamp);
 
     // This stops local mapping thread (map building) and performs only camera tracking.
     void ActivateLocalizationMode();
@@ -160,7 +174,8 @@ private:
     bool mbDeactivateLocalizationMode;
 
     //apriltag config
-    getopt_t *aprilopt;
+    apriltag_family_t *aprilopt;
+    apriltag_detector_t* april_det_opt;
 };
 
 }// namespace ORB_SLAM
