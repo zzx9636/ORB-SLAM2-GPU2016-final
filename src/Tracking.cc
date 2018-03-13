@@ -264,7 +264,7 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
     return mCurrentFrame.mTcw.clone();
 }
 
-cv::Mat Tracking::GrabImageMonocular_april(const cv::Mat &im, const double &timestamp, apriltag_detector_t * april_det_opt)
+cv::Mat Tracking::GrabImageMonocular_april(const cv::Mat &im, const double &timestamp, April::april_detector * april_det)
 {
     mImGray = im;
 
@@ -286,7 +286,7 @@ cv::Mat Tracking::GrabImageMonocular_april(const cv::Mat &im, const double &time
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
     else
-        mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth, april_det_opt);
+        mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth, april_det);
 
     Track();
 

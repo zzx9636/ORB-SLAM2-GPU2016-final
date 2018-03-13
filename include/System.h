@@ -35,14 +35,8 @@
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
 #include "Viewer.h"
+#include "april_detector.h"
 
-#include "Thirdparty/Apriltag2/apriltag_src/apriltag.h"
-#include "Thirdparty/Apriltag2/apriltag_src/tag36h11.h"
-#include "Thirdparty/Apriltag2/apriltag_src/tag36h10.h"
-#include "Thirdparty/Apriltag2/apriltag_src/tag36artoolkit.h"
-#include "Thirdparty/Apriltag2/apriltag_src/tag25h9.h"
-#include "Thirdparty/Apriltag2/apriltag_src/tag25h7.h"
-#include "Thirdparty/Apriltag2/apriltag_src/common/getopt.h"
 
 namespace ORB_SLAM2
 {
@@ -70,7 +64,7 @@ public:
     System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true);
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads with apriltag config input.
-    System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, apriltag_family_t * input_opt, apriltag_detector_t* input_det_opt, const bool bUseViewer = true);
+    System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, apriltag_detector_t* input_det_opt, const bool bUseViewer = true);
 
     // Proccess the given stereo frame. Images must be synchronized and rectified.
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -173,9 +167,9 @@ private:
     bool mbActivateLocalizationMode;
     bool mbDeactivateLocalizationMode;
 
-    //apriltag config
-    apriltag_family_t *aprilopt;
-    apriltag_detector_t* april_det_opt;
+    //apriltag detector
+    April::april_detector* april_det;
+    
 };
 
 }// namespace ORB_SLAM

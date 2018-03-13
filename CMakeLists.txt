@@ -59,6 +59,7 @@ cuda_include_directories(
 )
 
 cuda_add_library(${PROJECT_NAME} SHARED
+src/april_detector.cpp
 src/System.cc
 src/Tracking.cc
 src/LocalMapping.cc

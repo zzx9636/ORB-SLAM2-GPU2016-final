@@ -37,6 +37,7 @@
 #include "Initializer.h"
 #include "MapDrawer.h"
 #include "System.h"
+#include "april_detector.h"
 
 #include <mutex>
 
@@ -61,7 +62,7 @@ public:
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp);
     cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
     cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp);
-    cv::Mat GrabImageMonocular_april(const cv::Mat &im, const double &timestamp, apriltag_detector_t * april_det_opt);
+    cv::Mat GrabImageMonocular_april(const cv::Mat &im, const double &timestamp, April::april_detector * april_det);
 
     void SetLocalMapper(LocalMapping* pLocalMapper);
     void SetLoopClosing(LoopClosing* pLoopClosing);

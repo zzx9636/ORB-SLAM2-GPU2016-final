@@ -111,13 +111,11 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
-    cout<<"Default Apriltag configuration set"<<endl; 
-    aprilopt=NULL;
-    april_det_opt=NULL;
+    april_det=NULL;
 }
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor, 
-                apriltag_family_t * input_opt, apriltag_detector_t* input_det_opt, const bool bUseViewer)
+                apriltag_detector_t* input_det_opt, const bool bUseViewer)
   : mSensor(sensor), mbReset(false), mbActivateLocalizationMode(false)
   , mbDeactivateLocalizationMode(false)
 {
@@ -198,33 +196,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpLoopCloser->SetTracker(mpTracker);
     mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
-    
-    if(input_opt!=NULL)
-    {
-        cout<<"Customed Apriltag configuration set"<<endl;
-        aprilopt=input_opt;
-       
-    }else{
-        cout<<"Default Apriltag configuration set"<<endl; 
-        aprilopt=tag36h11_create();
-        
-    }
-    if(input_det_opt!=NULL)
-    {
-         april_det_opt=input_det_opt;
-         cout<<"Customed Apriltag configuration set"<<endl;
-    }else{
-        april_det_opt=apriltag_detector_create();
-        apriltag_detector_add_family(april_det_opt,aprilopt);
-        april_det_opt->quad_decimate=1.0;
-        april_det_opt->quad_sigma=0.0;
-        april_det_opt->nthreads=4;
-        april_det_opt->debug=0;
-        april_det_opt->refine_edges=0;
-        april_det_opt->refine_decode=0;
-        april_det_opt->refine_pose=0;
-        cout<<"Default Apriltag detector configuration set"<<endl;
-    }
+    april_det = new April::april_detector(input_det_opt);
 }
 
 cv::Mat System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp)
@@ -404,7 +376,7 @@ cv::Mat System::TrackMonocular_april(const cv::Mat &im, const double &timestamp)
         mbReset = false;
     }
     }
-    return mpTracker->GrabImageMonocular_april(im,timestamp,april_det_opt);
+    return mpTracker->GrabImageMonocular_april(im,timestamp, april_det);
 }
 
 void System::ActivateLocalizationMode()
@@ -431,11 +403,10 @@ void System::Shutdown()
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
     mpViewer->RequestFinish();
-    if(aprilopt!=NULL)
-        tag36h11_destroy(aprilopt);
+    if(april_det!=NULL)
+        april_det->clear();
+    april_det=NULL;
     
-    if(april_det_opt!=NULL)
-        apriltag_detector_destroy(april_det_opt);
     
     // Wait until all thread have effectively stopped
     while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished()  ||
