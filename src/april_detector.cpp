@@ -58,7 +58,7 @@ april_detector::~april_detector()
     this->clear();
 }
 
-void april_detector::detection(cv::Mat gray)
+ std::vector<tag_data> april_detector::detection(const cv::Mat& gray)
 {
     image_u8_t im = { .width = gray.cols,
     .height = gray.rows,
@@ -69,10 +69,25 @@ void april_detector::detection(cv::Mat gray)
     std::cout << zarray_size(detections) << " tags detected" << std::endl;
 
     //detection_show(detections,gray);
+    //copy detected tag information from detectors
+    std::vector<tag_data> tags_vec(zarray_size(detections));
+    for (int i = 0; i < zarray_size(detections); i++) 
+    {
+        apriltag_detection_t *det;
+        zarray_get(detections, i, &det);
+        tags_vec[i].id=det->id;
+        tags_vec[i].hamming=det->hamming;
+        tags_vec[i].goodness=det->goodness;
+        tags_vec[i].decision_margin=det->decision_margin;
+        std::copy(std::begin(det->c),std::end(det->c),std::begin(tags_vec[i].c));
+        std::copy(std::begin(det->p),std::end(det->p),std::begin(tags_vec[i].p));
+        //std::cout<<"Tag "<<i<<"'s center is ["<<tags_vec[i].c[0]<<","<<tags_vec[i].c[1]<<"]"<<std::endl;
+    }
     zarray_destroy(detections);
+    return tags_vec;
 }
 
-void april_detector::detection_show(zarray_t * detections,cv::Mat & frame)
+void april_detector::detection_show(zarray_t * detections,const cv::Mat & frame)
 {
      for (int i = 0; i < zarray_size(detections); i++) {
             apriltag_detection_t *det;
