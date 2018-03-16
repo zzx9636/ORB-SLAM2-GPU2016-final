@@ -254,7 +254,9 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp,
     mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
-    april_det->detection(imGray);
+    std::vector<April::tag_data> frame_tag=april_det->detection(imGray);
+    img_seg=april_det->image_segmentation(imGray,frame_tag);
+
     // ORB extraction
     ExtractORB(0,imGray);
 

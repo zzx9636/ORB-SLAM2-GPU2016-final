@@ -104,6 +104,10 @@ public:
     cv::Mat UnprojectStereo(const int &i);
 
 public:
+
+    // segmented images by april_detector
+
+    cv::Mat img_seg;
     // Vocabulary used for relocalization.
     ORBVocabulary* mpORBvocabulary;
 

@@ -285,8 +285,11 @@ cv::Mat Tracking::GrabImageMonocular_april(const cv::Mat &im, const double &time
 
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
-    else
+    else{
         mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth, april_det);
+        //cheat to check if the img is ok
+        mImGray=mCurrentFrame.img_seg;
+    }
 
     Track();
 

@@ -36,8 +36,6 @@ april_detector::april_detector(apriltag_detector_t * in_opt)
     }
 
     //cv::namedWindow("April tags Detecion");
-
-
 }
 
 
@@ -60,6 +58,7 @@ april_detector::~april_detector()
 
  std::vector<tag_data> april_detector::detection(const cv::Mat& gray)
 {
+    //get_mat_type(gray);
     image_u8_t im = { .width = gray.cols,
     .height = gray.rows,
     .stride = gray.cols,
@@ -121,3 +120,63 @@ void april_detector::detection_show(zarray_t * detections,const cv::Mat & frame)
         imshow("April tags Detecion", frame);
         waitKey(1);
 }
+
+
+  cv::Mat april_detector::image_segmentation(const cv::Mat& gray, const std::vector<tag_data> &tag_vec)
+  {
+      if(tag_vec.size()==0) //no tag detected
+        return gray;
+
+    /*
+    cv::Mat tag_mask=Mat(gray.rows,gray.cols,CV_8UC1);
+    
+    for(int i=0; i<tag_mask.cols; i++){
+        for(int j=0; j<tag_mask.rows; j++)
+            tag_mask.at<uchar>(Point(i,j)) = uchar(255);
+    }
+    */
+    std::vector<Point> ROI_Poly;
+    std::vector<Point> ROI_Vertices;
+
+    cv::Mat seg_img=gray;
+    for(unsigned int i=0; i<tag_vec.size(); i++ ){
+        ROI_Vertices.clear();
+        ROI_Poly.clear();
+        ROI_Vertices.push_back(Point((tag_vec[i]).p[0][0],(tag_vec[i]).p[0][1]));
+        ROI_Vertices.push_back(Point((tag_vec[i]).p[1][0],(tag_vec[i]).p[1][1]));
+        ROI_Vertices.push_back(Point((tag_vec[i]).p[2][0],(tag_vec[i]).p[2][1]));
+        ROI_Vertices.push_back(Point((tag_vec[i]).p[3][0],(tag_vec[i]).p[3][1]));
+        approxPolyDP(ROI_Vertices, ROI_Poly, 1.0, true);
+        fillConvexPoly(seg_img, &ROI_Poly[0], ROI_Poly.size(), Scalar(255),4, 0);                 
+    }
+
+    //cv::Mat seg_img=Mat(gray.rows,gray.cols,CV_8UC1);
+    //gray.copyTo(seg_img,tag_mask);
+    
+    return seg_img;
+    //return tag_mask;
+  }
+
+  void april_detector::get_mat_type(const cv::Mat & M)
+  {
+    std::string r;
+    int type=M.type();
+    
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+    switch ( depth ) {
+    case CV_8U:  r = "8U"; break;
+    case CV_8S:  r = "8S"; break;
+    case CV_16U: r = "16U"; break;
+    case CV_16S: r = "16S"; break;
+    case CV_32S: r = "32S"; break;
+    case CV_32F: r = "32F"; break;
+    case CV_64F: r = "64F"; break;
+    default:     r = "User"; break;
+  }
+
+  r += "C";
+  r += (chans+'0');
+      printf("Matrix: %s %dx%d \n", r.c_str(), M.cols, M.rows );
+  }

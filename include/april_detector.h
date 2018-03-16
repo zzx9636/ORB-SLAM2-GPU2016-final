@@ -58,16 +58,14 @@ public:
     void clear();
     std::vector<tag_data> detection(const cv::Mat& gray);
     void detection_show(zarray_t * detections,const cv::Mat & frame);
+    cv::Mat image_segmentation(const cv::Mat &gray, const std::vector<tag_data> &tag_vec);
 
     
 private:
     apriltag_family_t *aprilopt;
     apriltag_detector_t* april_det_opt;
+    void get_mat_type(const cv::Mat & M);
    
 };
-
-
-
-
 }
 #endif
